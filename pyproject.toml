@@ -3,7 +3,7 @@ name = "fault-detection-engine-parts"
 version = "0.1.0"
 description = "Physics-informed deep learning for fault detection in engine parts (CWRU bearings, NASA C-MAPSS RUL), using non-GA architectures and optimizers."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
     "numpy",
     "scipy",

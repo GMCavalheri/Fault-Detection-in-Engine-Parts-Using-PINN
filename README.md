@@ -43,9 +43,7 @@ Dependencies are managed with [uv](https://docs.astral.sh/uv/).
 uv sync
 ```
 
-> **Notes on this environment (Windows):**
-> - The project targets Python 3.11+, but `uv`'s managed-Python downloader hit an environment-specific bug on the original dev machine (junction/symlink creation failed after extracting the interpreter — likely AppData\Roaming sync interference). As a workaround, the `.venv` currently runs on the system's Anaconda Python 3.9.7 (`requires-python = ">=3.9"` in `pyproject.toml`). Switch back to a `uv`-managed 3.11 interpreter when convenient: `uv python install 3.11`, then `uv sync --python 3.11` and bump `requires-python`.
-> - Because the venv is built on Anaconda's Python, running the Jupyter kernel (e.g. `jupyter nbconvert --execute`) needs `sqlite3.dll` from `anaconda3\Library\bin` on `PATH` (normally added by `conda activate`, which we're bypassing). Add it manually if you hit `DLL load failed while importing _sqlite3`: `$env:Path = "C:\Users\lcava\anaconda3\Library\bin;$env:Path"`.
+> **Note (Windows):** `uv`'s managed-Python installer (`uv python install <version>`) can fail with `Missing expected target directory for Python minor version link` on some machines (Defender real-time scanning appears to lock the freshly extracted interpreter before uv can create its version-alias symlink). If that happens, `uv sync` still works once the interpreter's actual version directory exists under `%APPDATA%\uv\python\` — run `uv python install <version>` once (it downloads and extracts even though the final link step errors), then `uv sync` picks it up directly.
 
 Later phases need optional dependency groups (kept out of the base install to stay light):
 
