@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# Environments
+.venv/
+venv/
+
+# uv
+.python-version.local
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Test cache
+.pytest_cache/
+
+# Data (raw/processed datasets are large and re-downloadable, not versioned)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Model artifacts / experiment tracking
+*.pt
+*.pth
+*.ckpt
+mlruns/
+optuna_studies/
+wandb/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Docker
+docker/*.log

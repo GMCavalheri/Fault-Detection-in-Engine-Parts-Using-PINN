@@ -1,0 +1,31 @@
+[project]
+name = "fault-detection-engine-parts"
+version = "0.1.0"
+description = "Physics-informed deep learning for fault detection in engine parts (CWRU bearings, NASA C-MAPSS RUL), using non-GA architectures and optimizers."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "scipy",
+    "pandas",
+    "scikit-learn",
+    "matplotlib",
+    "jupyter",
+    "ipykernel",
+]
+
+[dependency-groups]
+dev = ["pytest"]
+
+[project.optional-dependencies]
+# Phase 2-3: deep learning models (CNN, autoencoder, GNN)
+dl = ["torch"]
+gnn = ["torch-geometric"]
+# Phase 4: optimization comparison (Bayesian vs PSO)
+opt = ["optuna", "pyswarms"]
+# Phase 6: serving and dashboard
+serve = ["fastapi", "uvicorn"]
+dashboard = ["streamlit"]
+
+[tool.uv]
+package = false
