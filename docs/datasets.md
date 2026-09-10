@@ -4,7 +4,7 @@
 
 Source: [Case Western Reserve University Bearing Data Center](https://engineering.case.edu/bearingdatacenter/download-data-file), 12k Drive End files.
 
-Downloaded into `data/raw/cwru/` (16 files, ~64 MB): `Normal_{0..3}.mat` (baseline, all 4 loads) and, at load 0 (1797 rpm) plus all 4 loads for `IR007`, three fault types (Inner Race `IR`, Ball `B`, Outer Race centered-at-6:00 `OR`) at three fault diameters (0.007", 0.014", 0.021").
+Downloaded into `data/raw/cwru/` (40 files, ~115 MB): `Normal_{0..3}.mat` (baseline) plus all 4 loads × 3 fault types (Inner Race `IR`, Ball `B`, Outer Race centered-at-6:00 `OR`) × 3 fault diameters (0.007", 0.014", 0.021") — full cross-condition coverage as of Phase 2, expanded from the load-0-only subset downloaded in Phase 0.
 
 - **Sampling rate**: 12,000 samples/second
 - **Format**: MATLAB `.mat`, one struct-like dict per file
@@ -15,7 +15,7 @@ Downloaded into `data/raw/cwru/` (16 files, ~64 MB): `Normal_{0..3}.mat` (baseli
   - `RPM` — motor rotational speed, scalar
 - **Signal length**: varies per file — `Normal_0` has 243,938 samples/channel; `IR007_0` has 121,265. Fixed-length windows must be extracted per file, not assumed uniform.
 - **Fault labels present**: Normal, Inner Race (IR), Ball (B), Outer Race centered (OR@6) — at fault diameters 0.007"/0.014"/0.021"
-- **Operating conditions**: motor load 0–3 HP (approx. 1797/1772/1750/1730 rpm) — `IR007` downloaded across all 4 loads to support held-out-load generalization testing; other fault types downloaded at load 0 only for now (can expand later if needed for the GNN/optimization phases).
+- **Operating conditions**: motor load 0–3 HP (approx. 1797/1772/1750/1730 rpm) — all 10 classes (Normal + 9 fault-type/diameter combos) now have all 4 loads, supporting held-out-load generalization testing across the full class set (used from Phase 2 onward).
 
 ## NASA C-MAPSS
 
@@ -39,7 +39,7 @@ Downloaded and extracted into `data/raw/cmapss/`: `train_FD001..FD004.txt`, `tes
 
 Splits are made **by unit/operating condition, not by randomly shuffling individual samples**, to avoid leakage between train and test sets:
 
-- **CWRU**: split by bearing fault instance (each combination of fault type/size/load) rather than by random windows within a signal. Windows drawn from the same continuous recording must not appear in both train and test — otherwise the model can memorize a specific recording's noise characteristics rather than learning the fault signature. The downloaded `IR007` files across all 4 loads exist specifically to let a held-out-load split test generalization across operating conditions (e.g. train on loads 0–2, test on load 3).
+- **CWRU**: split by bearing fault instance (each combination of fault type/size/load) rather than by random windows within a signal. Windows drawn from the same continuous recording must not appear in both train and test — otherwise the model can memorize a specific recording's noise characteristics rather than learning the fault signature. With full 4-load coverage across all classes (since Phase 2), the standard split is by held-out load: train on loads 0–2, test on load 3 — a genuine cross-condition generalization test, not just a within-recording holdout.
 - **C-MAPSS**: split by engine unit ID — each unit's full run-to-failure trajectory belongs entirely to one split. This matches the dataset's own design: it already ships with separate train/test files per subset, with the test set truncated before failure and true RUL given in the companion `RUL_FD00X.txt` file. No custom splitting needed for the baseline evaluation protocol; any additional internal train/val split should still respect unit boundaries.
 
 This matches the leakage-awareness note in the project plan's Phase 0.
