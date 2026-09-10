@@ -10,7 +10,7 @@ This is **project 1 of a 4-project roadmap**:
 
 ## Status
 
-**Phase 0 — Setup**: done. **Phase 1 — Classical Baseline**: done, see [docs/phase1_results.md](docs/phase1_results.md) (Random Forest / SVM fault classification on CWRU, 0.977 accuracy). **Phase 2 — Deep Learning**: done, see [docs/phase2_results.md](docs/phase2_results.md) (1D CNN + autoencoder on the full cross-condition CWRU dataset; Random Forest remains the strongest baseline at 0.978 accuracy). **Phase 3 — Graph Neural Network**: done, see [docs/phase3_results.md](docs/phase3_results.md) (multi-sensor DE+FE spatio-temporal GCN, 0.871 accuracy — Random Forest still undefeated). See [fault-detection-engine-parts-plan.md](fault-detection-engine-parts-plan.md) for the full phase-by-phase project plan.
+**Phase 0 — Setup**: done. **Phase 1 — Classical Baseline**: done, see [docs/phase1_results.md](docs/phase1_results.md) (Random Forest / SVM fault classification on CWRU, 0.977 accuracy). **Phase 2 — Deep Learning**: done, see [docs/phase2_results.md](docs/phase2_results.md) (1D CNN + autoencoder on the full cross-condition CWRU dataset; Random Forest remains the strongest baseline at 0.978 accuracy). **Phase 3 — Graph Neural Network**: done, see [docs/phase3_results.md](docs/phase3_results.md) (multi-sensor DE+FE spatio-temporal GCN, 0.871 accuracy — Random Forest still undefeated). **Phase 4 — Optimization Comparison**: done, see [docs/phase4_results.md](docs/phase4_results.md) (Optuna vs. PSO tuning SVM and the 1D CNN; the tuned CNN reaches 0.999 accuracy, finally beating Random Forest). See [fault-detection-engine-parts-plan.md](fault-detection-engine-parts-plan.md) for the full phase-by-phase project plan.
 
 ## Datasets
 

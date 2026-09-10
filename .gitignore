@@ -30,6 +30,7 @@ data/processed/*
 mlruns/
 optuna_studies/
 wandb/
+report.log
 
 # OS / editor
 .DS_Store

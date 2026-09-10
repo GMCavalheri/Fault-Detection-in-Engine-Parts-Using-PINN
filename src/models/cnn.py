@@ -12,27 +12,35 @@ from torch.utils.data import DataLoader
 
 
 class Cnn1D(nn.Module):
-    def __init__(self, num_classes: int):
+    def __init__(self, num_classes: int, width_mult: float = 1.0, dropout: float = 0.0):
+        """`width_mult` scales the three conv block channel counts (base 16/32/64)
+        and `dropout` sits before the classifier head - both tunable knobs for
+        Phase 4's optimization comparison, defaulted to reproduce the Phase 2
+        architecture exactly when left at 1.0/0.0.
+        """
         super().__init__()
+        c1, c2, c3 = (max(4, round(base * width_mult)) for base in (16, 32, 64))
         self.features = nn.Sequential(
-            nn.Conv1d(1, 16, kernel_size=64, stride=8, padding=28),
-            nn.BatchNorm1d(16),
+            nn.Conv1d(1, c1, kernel_size=64, stride=8, padding=28),
+            nn.BatchNorm1d(c1),
             nn.ReLU(),
             nn.MaxPool1d(2),
-            nn.Conv1d(16, 32, kernel_size=3, padding=1),
-            nn.BatchNorm1d(32),
+            nn.Conv1d(c1, c2, kernel_size=3, padding=1),
+            nn.BatchNorm1d(c2),
             nn.ReLU(),
             nn.MaxPool1d(2),
-            nn.Conv1d(32, 64, kernel_size=3, padding=1),
-            nn.BatchNorm1d(64),
+            nn.Conv1d(c2, c3, kernel_size=3, padding=1),
+            nn.BatchNorm1d(c3),
             nn.ReLU(),
             nn.MaxPool1d(2),
             nn.AdaptiveAvgPool1d(1),
         )
-        self.classifier = nn.Linear(64, num_classes)
+        self.dropout = nn.Dropout(dropout)
+        self.classifier = nn.Linear(c3, num_classes)
 
     def forward(self, x):
-        x = self.features(x).squeeze(-1)  # (batch, 64)
+        x = self.features(x).squeeze(-1)  # (batch, c3)
+        x = self.dropout(x)
         return self.classifier(x)
 
 
