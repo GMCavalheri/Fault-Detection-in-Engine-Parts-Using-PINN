@@ -16,6 +16,7 @@ Downloaded into `data/raw/cwru/` (40 files, ~115 MB): `Normal_{0..3}.mat` (basel
 - **Signal length**: varies per file — `Normal_0` has 243,938 samples/channel; `IR007_0` has 121,265. Fixed-length windows must be extracted per file, not assumed uniform.
 - **Fault labels present**: Normal, Inner Race (IR), Ball (B), Outer Race centered (OR@6) — at fault diameters 0.007"/0.014"/0.021"
 - **Operating conditions**: motor load 0–3 HP (approx. 1797/1772/1750/1730 rpm) — all 10 classes (Normal + 9 fault-type/diameter combos) now have all 4 loads, supporting held-out-load generalization testing across the full class set (used from Phase 2 onward).
+- **Known file quirks (CWRU's own export, not introduced by this repo)**: `Normal_1.mat` has no `RPM` field at all. `Normal_2.mat` carries stray leftover DE/FE channels from a *different* file (an older, lower-numbered variable) alongside its own — `src/data/cwru.py::_select_key` picks the highest-numbered matching variable to handle this, and `NOMINAL_RPM_BY_LOAD` supplies CWRU's documented nominal RPM for files missing the field. See [docs/phase5_results.md](phase5_results.md) for how this was found.
 
 ## NASA C-MAPSS
 
