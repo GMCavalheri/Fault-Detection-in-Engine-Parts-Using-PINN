@@ -1,0 +1,21 @@
+# Inference API - serves the models/ artifacts produced by scripts/train_artifacts.py.
+# Build context is the repo root (see docker-compose.yml): docker build -f docker/Dockerfile.api ..
+FROM python:3.11-slim
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+
+WORKDIR /app
+
+# Install dependencies first (only base + dl + serve extras - no torch-geometric/optuna/pyswarms,
+# which src/api never imports) so this layer is cached across code-only changes.
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --extra dl --extra serve
+
+COPY src/ ./src/
+COPY models/ ./models/
+
+EXPOSE 8000
+HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
+    CMD uv run python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+
+CMD ["uv", "run", "uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

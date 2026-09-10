@@ -1,0 +1,25 @@
+# Phase 6 — Productization Results
+
+Turns the project from a set of notebooks into a runnable service: a trained-artifact export step, a FastAPI inference service, a Streamlit dashboard that calls it, and Docker Compose to run both together.
+
+## What was built
+
+- **`scripts/train_artifacts.py`** — retrains the final deployed models on *all* available labeled data (all 40 CWRU files, all 4 loads), using Phase 4's Optuna-winning CNN hyperparameters (already validated on a held-out-load split — this step is the standard "validate on a split, then retrain on everything for the shipped model" practice, not a new experiment). Produces `models/cnn_classifier.pt` + `models/autoencoder.pt` with metadata JSON files (class names, normalization stats, anomaly threshold).
+- **`src/api/inference.py`** — loads both artifacts once; `FaultDetector.analyze()` returns classification + confidence + anomaly score + optional physics context (Phase 5's bearing defect-frequency equations, if RPM is supplied) for a single signal window. Shared by the API and directly testable.
+- **`src/api/main.py`** — FastAPI service. `GET /health`, `POST /predict` (accepts a `.mat` file with a `*_DE_time` channel, or a plain `.csv`/`.txt`; windows a longer signal into multiple predictions and aggregates by majority vote).
+- **`dashboard/app.py`** — Streamlit UI: upload a signal, optionally give RPM, see predicted class/confidence/anomaly status, a class-probability chart, and a per-window detail table. Calls the API over HTTP (`API_URL` env var), not in-process — a deliberate choice so the dashboard and API are genuinely separate, independently deployable services.
+- **`docker/`** — `Dockerfile.api`, `Dockerfile.dashboard`, `docker-compose.yml`. Both images build on `python:3.11-slim` + `uv sync --frozen`.
+
+## Verification actually performed
+
+Everything below was run for real, not just written and assumed correct:
+
+- `uv run python scripts/train_artifacts.py` — trained and saved both artifacts (2,953 windows, 10 classes). Sanity-check accuracy 1.00 on a held-out 10% time-contiguous slice (an easier in-distribution check than Phase 4's cross-load test, which already validated this architecture/hyperparameter choice).
+- `tests/test_inference.py`, `tests/test_api.py`, `tests/test_signal_parsing.py` (22 new tests) — cover the inference module, FastAPI endpoints (via `TestClient`), and file-parsing edge cases (multi-window aggregation, too-short signals, unsupported file types, the same stray-duplicate-variable `.mat` quirk documented in Phase 5).
+- Started the API live (`uv run uvicorn src.api.main:app`) and sent real CWRU `.mat` files through `POST /predict` via `curl`: a real `IR007` fault file correctly classified with 99.98% confidence, flagged as anomalous (100% of windows), with the correct physics-predicted defect frequency at the given RPM; a real `Normal` file correctly classified with 99.996% confidence and a low anomaly rate (1.7%).
+- Started the Streamlit dashboard live and confirmed it renders correctly (sidebar, uploader, RPM input) and successfully calls the live API (sidebar content is populated from the API's `/health` response). The dashboard's exact post-response data-handling logic (the pandas/aggregation code in `dashboard/app.py`) was additionally run standalone against a real API response to confirm no schema mismatches — the Browser tool used for this project can't drive a native OS file-picker dialog, so the upload-button click itself wasn't exercised through the browser, but every piece of code on both sides of that click was.
+- Built both Docker images (`docker compose build`) and ran the full stack (`docker compose up`). **Found and fixed a real problem in the process**: the initial build produced a **9.59 GB** API image, because the default `torch` wheel for Linux bundles the full NVIDIA CUDA toolkit (~6 GB) that this CPU-only project never uses. Pinned `torch` to the CPU-only wheel index in `pyproject.toml` (`[tool.uv.sources]` / `[[tool.uv.index]]`), which dropped the image to **2.03 GB** and cut the build from ~230s to ~65s, with all 54 local tests still passing on the CPU build. Then verified the containerized stack end-to-end: `docker compose up` → API healthcheck passes → `curl` to the host-exposed API port classifies a real fault file correctly → the dashboard container reaches the API container over the internal Docker network (confirmed via its sidebar, which is populated by a live call to `api:8000/health`).
+
+## A note on scope
+
+The deployed classifier is Phase 4's CNN (0.999 accuracy on the held-out-load validation split), not Phase 5's physics-informed variant — chosen because it doesn't require RPM as an input, which a dashboard user may not always know. Phase 5's physics equations aren't wasted, though: they power the dashboard's optional "expected defect frequency" readout when RPM *is* supplied, and the anomaly detector is Phase 2's autoencoder, giving the "prediction + confidence + anomaly score" the project plan's Phase 6 asks for from three different phases' work, not just Phase 4's.

@@ -1,0 +1,9 @@
+{
+  "window_size": 2048,
+  "sample_rate_hz": 12000,
+  "train_mean": 0.01244497939420464,
+  "train_std": 0.06560324245479858,
+  "anomaly_threshold_mse": 0.030211366713047028,
+  "threshold_percentile": 95,
+  "trained_on": "all Normal-class windows across all 4 loads"
+}

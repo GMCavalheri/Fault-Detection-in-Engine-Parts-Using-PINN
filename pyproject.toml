@@ -25,8 +25,19 @@ gnn = ["torch-geometric"]
 # Phase 4: optimization comparison (Bayesian vs PSO)
 opt = ["optuna", "pyswarms"]
 # Phase 6: serving and dashboard
-serve = ["fastapi", "uvicorn"]
-dashboard = ["streamlit"]
+serve = ["fastapi", "uvicorn[standard]", "python-multipart"]
+dashboard = ["streamlit", "requests"]
 
 [tool.uv]
 package = false
+
+[tool.uv.sources]
+# CPU-only wheels - this project never uses a GPU, and the default PyPI torch
+# build for Linux bundles ~6GB of unused NVIDIA CUDA libraries (blows up the
+# Docker image from ~1GB to ~9.5GB for nothing).
+torch = [{ index = "pytorch-cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

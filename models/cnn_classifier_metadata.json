@@ -1,0 +1,22 @@
+{
+  "class_names": [
+    "B007",
+    "B014",
+    "B021",
+    "IR007",
+    "IR014",
+    "IR021",
+    "Normal",
+    "OR007",
+    "OR014",
+    "OR021"
+  ],
+  "window_size": 2048,
+  "sample_rate_hz": 12000,
+  "width_mult": 0.7339917805043032,
+  "dropout": 0.0936111842654619,
+  "train_mean": 0.008473346477120723,
+  "train_std": 0.2988699897458658,
+  "sanity_check_accuracy": 1.0,
+  "trained_on": "all 40 CWRU files (all loads, all classes)"
+}

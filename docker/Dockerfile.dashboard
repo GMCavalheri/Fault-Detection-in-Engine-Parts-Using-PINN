@@ -1,0 +1,20 @@
+# Streamlit dashboard - a thin client that calls the API service over HTTP (API_URL env var),
+# no model weights or torch needed in this image.
+# Build context is the repo root (see docker-compose.yml): docker build -f docker/Dockerfile.dashboard ..
+FROM python:3.11-slim
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+
+WORKDIR /app
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --extra dashboard
+
+COPY dashboard/ ./dashboard/
+
+EXPOSE 8501
+ENV API_URL=http://api:8000
+HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
+    CMD uv run python -c "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"
+
+CMD ["uv", "run", "streamlit", "run", "dashboard/app.py", "--server.address", "0.0.0.0", "--server.port", "8501"]

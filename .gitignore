@@ -23,10 +23,12 @@ data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 
-# Model artifacts / experiment tracking
+# Model artifacts / experiment tracking (models/ is the exception - small, deliberate,
+# versioned deployment artifacts produced by scripts/train_artifacts.py, not scratch files)
 *.pt
 *.pth
 *.ckpt
+!models/*.pt
 mlruns/
 optuna_studies/
 wandb/
@@ -36,6 +38,7 @@ report.log
 .DS_Store
 .vscode/
 .idea/
+.claude/
 
 # Docker
 docker/*.log
