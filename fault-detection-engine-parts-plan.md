@@ -89,6 +89,6 @@ Build an end-to-end pipeline that detects and diagnoses faults in mechanical com
 - README suitable for a public GitHub portfolio repo
 
 ## Open Decisions (to resolve at project start)
-- CWRU only, or CWRU + C-MAPSS combined scope?
+- CWRU only, or CWRU + C-MAPSS combined scope? **Resolved: both** — CWRU drove Phases 1–6; C-MAPSS RUL regression (Gradient Boosting + LSTM, FD001) was addressed as a post-Phase-6 addendum, see [docs/cmapss_results.md](docs/cmapss_results.md).
 - Repo name and GitHub Pages/dashboard hosting approach
-- Whether Phase 5 (physics-informed extension) is in scope for v1 or deferred to a v2
+- Whether Phase 5 (physics-informed extension) is in scope for v1 or deferred to a v2 — **Resolved: in scope**, see [docs/phase5_results.md](docs/phase5_results.md).

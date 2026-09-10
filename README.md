@@ -21,6 +21,7 @@ This is **project 1 of a 4-project roadmap**:
 | 4 — Optimization comparison | Optuna/PSO-tuned CNN, **0.999** — first model to beat RF | [docs/phase4_results.md](docs/phase4_results.md) |
 | 5 — Physics-informed extension | Bearing defect-frequency loss, modest gain on a harder split | [docs/phase5_results.md](docs/phase5_results.md) |
 | 6 — Productization | API + dashboard + Docker, serving the Phase 4 CNN | [docs/phase6_results.md](docs/phase6_results.md) |
+| + C-MAPSS RUL regression | Gradient Boosting beats an LSTM (17.0 vs 18.9 RMSE) — same "classical is a hard baseline" story, different dataset | [docs/cmapss_results.md](docs/cmapss_results.md) |
 
 Four real bugs were found and fixed along the way (SVM feature scaling in Phase 1, a histogram-binning issue in Phase 2, an unseeded-retrain confound in Phase 4, a stale-channel data quirk in Phase 5) — each is documented in its phase's write-up, not just fixed silently.
 
@@ -42,22 +43,23 @@ flowchart LR
         API[FastAPI<br/>src/api/main.py]
         DASH[Streamlit dashboard<br/>dashboard/app.py]
     end
+    RUL[RUL regression<br/>GBR · LSTM]
     ARTIFACTS[(models/<br/>cnn_classifier.pt<br/>autoencoder.pt)]
 
     CWRU --> FEAT --> MODELS
-    CMAPSS -.future work.-> MODELS
+    CMAPSS --> RUL
     MODELS --> TUNE --> TRAIN
     TRAIN --> ARTIFACTS
     ARTIFACTS --> API
     API <--HTTP--> DASH
 ```
 
-The classifier served in production is Phase 4's tuned CNN (validated on a held-out-load split, then retrained on all available data for deployment — see [docs/phase6_results.md](docs/phase6_results.md)); the anomaly score is Phase 2's autoencoder; the dashboard's optional "expected defect frequency" readout uses Phase 5's bearing-kinematics equations when RPM is supplied.
+The classifier served in production is Phase 4's tuned CNN (validated on a held-out-load split, then retrained on all available data for deployment — see [docs/phase6_results.md](docs/phase6_results.md)); the anomaly score is Phase 2's autoencoder; the dashboard's optional "expected defect frequency" readout uses Phase 5's bearing-kinematics equations when RPM is supplied. The C-MAPSS RUL models ([docs/cmapss_results.md](docs/cmapss_results.md)) aren't wired into the API/dashboard yet.
 
 ## Datasets
 
-- **CWRU Bearing Dataset** — vibration signals for bearing fault diagnosis (multiple fault types/sizes/loads).
-- **NASA C-MAPSS** — turbofan engine degradation simulation, for Remaining Useful Life (RUL) prediction. Acquired in Phase 0 but not yet modeled — a natural next step beyond v1.
+- **CWRU Bearing Dataset** — vibration signals for bearing fault diagnosis (multiple fault types/sizes/loads). Modeled in Phases 1–5.
+- **NASA C-MAPSS** — turbofan engine degradation simulation, for Remaining Useful Life (RUL) prediction. Modeled in [docs/cmapss_results.md](docs/cmapss_results.md) (FD001 subset; FD002–4 downloaded but not yet modeled).
 
 Dataset details (sampling rates, labels, split strategy, known file quirks) are documented in [docs/datasets.md](docs/datasets.md).
 
@@ -68,8 +70,8 @@ data/            raw and processed datasets (not versioned, see .gitignore)
 notebooks/       exploration and per-phase analysis notebooks
 scripts/         train_artifacts.py - trains and saves the models/ the API/dashboard serve
 models/          saved model weights + metadata (small, versioned - see .gitignore)
-src/data/        data loading, windowing, and feature engineering
-src/models/      classical ML, CNN, autoencoder, GNN, physics-informed CNN
+src/data/        data loading, windowing, and feature engineering (CWRU + C-MAPSS)
+src/models/      classical ML, CNN, autoencoder, GNN, physics-informed CNN, RUL regressors
 src/optimization/  Bayesian optimization (Optuna) and PSO (pyswarms) tuning
 src/physics/     bearing defect-frequency equations (physics-informed loss + dashboard context)
 src/api/         FastAPI inference service + shared prediction logic
