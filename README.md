@@ -10,7 +10,7 @@ This is **project 1 of a 4-project roadmap**:
 
 ## Status
 
-**Phase 0 — Setup** (in progress). See [fault-detection-engine-parts-plan.md](fault-detection-engine-parts-plan.md) for the full phase-by-phase project plan.
+**Phase 0 — Setup**: done. **Phase 1 — Classical Baseline**: done, see [docs/phase1_results.md](docs/phase1_results.md) (Random Forest / SVM fault classification on CWRU, 0.977 accuracy). See [fault-detection-engine-parts-plan.md](fault-detection-engine-parts-plan.md) for the full phase-by-phase project plan.
 
 ## Datasets
 
