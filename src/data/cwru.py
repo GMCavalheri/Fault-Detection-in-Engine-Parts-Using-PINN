@@ -58,13 +58,18 @@ def list_cwru_files(cwru_dir: Path) -> list[CwruFile]:
     )
 
 
-def load_de_channel(path: Path) -> np.ndarray:
-    """Load the drive-end accelerometer channel, the standard CWRU channel."""
+def load_channel(path: Path, suffix: str) -> np.ndarray:
+    """Load one accelerometer channel by its variable-name suffix, e.g. '_DE_time'."""
     mat = loadmat(path)
     for key in mat:
-        if key.endswith("_DE_time"):
+        if key.endswith(suffix):
             return mat[key].ravel().astype(np.float64)
-    raise KeyError(f"No *_DE_time channel found in {path.name}")
+    raise KeyError(f"No *{suffix} channel found in {path.name}")
+
+
+def load_de_channel(path: Path) -> np.ndarray:
+    """Load the drive-end accelerometer channel, the standard CWRU channel."""
+    return load_channel(path, "_DE_time")
 
 
 def window_signal(signal: np.ndarray, window_size: int) -> np.ndarray:
@@ -105,6 +110,44 @@ def build_windowed_dataset(
 
     return (
         np.concatenate(all_windows, axis=0),
+        np.array(all_labels),
+        np.array(all_loads),
+        np.array(all_file_ids),
+    )
+
+
+CHANNEL_SUFFIXES = {"DE": "_DE_time", "FE": "_FE_time", "BA": "_BA_time"}
+
+
+def build_multichannel_windowed_dataset(
+    cwru_dir: Path, window_size: int = 2048, channels: tuple[str, ...] = ("DE", "FE")
+) -> tuple[dict[str, np.ndarray], np.ndarray, np.ndarray, np.ndarray]:
+    """Like build_windowed_dataset, but keeps multiple channels aligned per window.
+
+    Returns (per_channel_windows, labels, loads, file_ids) where
+    per_channel_windows[channel] has the same shape and window-for-window
+    alignment across channels - so windows[c][i] for different c are all the
+    same time segment of the same file. Requested channels must be present
+    in every file (DE and FE both are; BA is not, see docs/datasets.md).
+    """
+    files = list_cwru_files(cwru_dir)
+
+    per_channel_windows: dict[str, list[np.ndarray]] = {c: [] for c in channels}
+    all_labels, all_loads, all_file_ids = [], [], []
+    for file_id, f in enumerate(files):
+        channel_signals = {c: load_channel(f.path, CHANNEL_SUFFIXES[c]) for c in channels}
+        # channels are recorded simultaneously but occasionally differ by a few samples
+        n_windows = min(len(sig) // window_size for sig in channel_signals.values())
+
+        for c, sig in channel_signals.items():
+            per_channel_windows[c].append(window_signal(sig[: n_windows * window_size], window_size))
+
+        all_labels.extend([f.label] * n_windows)
+        all_loads.extend([f.load] * n_windows)
+        all_file_ids.extend([file_id] * n_windows)
+
+    return (
+        {c: np.concatenate(ws, axis=0) for c, ws in per_channel_windows.items()},
         np.array(all_labels),
         np.array(all_loads),
         np.array(all_file_ids),
