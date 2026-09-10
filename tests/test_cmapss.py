@@ -5,6 +5,7 @@ from src.data.cmapss import (
     add_capped_rul,
     build_test_sequences,
     build_train_sequences,
+    fit_regime_normalizer,
     select_informative_columns,
 )
 
@@ -87,3 +88,43 @@ def test_build_test_sequences_pads_short_trajectory():
     assert sequences.shape == (1, 10, 1)
     np.testing.assert_allclose(sequences[0, :6].ravel(), 1.0)
     np.testing.assert_allclose(sequences[0, 6:].ravel(), np.arange(1, 5))
+
+
+def _make_two_regime_df(n_per_regime: int = 200) -> pd.DataFrame:
+    rng = np.random.default_rng(0)
+    # regime A: op_setting_1=0 -> sensor offset 500; regime B: op_setting_1=100 -> sensor offset 600
+    op_setting_1 = np.concatenate([np.zeros(n_per_regime), np.full(n_per_regime, 100.0)])
+    offsets = np.concatenate([np.full(n_per_regime, 500.0), np.full(n_per_regime, 600.0)])
+    sensor = offsets + rng.normal(scale=1.0, size=2 * n_per_regime)  # small degradation-independent noise
+    return pd.DataFrame({"op_setting_1": op_setting_1, "sensor_x": sensor})
+
+
+def test_regime_normalizer_removes_condition_driven_offset():
+    df = _make_two_regime_df()
+    normalizer = fit_regime_normalizer(df, sensor_cols=["sensor_x"], op_setting_cols=["op_setting_1"], n_regimes=2)
+    normalized = normalizer.transform(df)
+
+    # before normalization the two regimes have very different means (500 vs 600)
+    raw_means = df.groupby("op_setting_1")["sensor_x"].mean()
+    assert abs(raw_means.iloc[0] - raw_means.iloc[1]) > 50
+
+    # after normalization both regimes should be centered near 0 with unit-ish scale
+    normalized_means = normalized.groupby(df["op_setting_1"])["sensor_x"].mean()
+    assert (normalized_means.abs() < 0.3).all()
+    normalized_stds = normalized.groupby(df["op_setting_1"])["sensor_x"].std()
+    assert ((normalized_stds - 1.0).abs() < 0.3).all()
+
+
+def test_regime_normalizer_transform_does_not_refit_on_new_data():
+    train_df = _make_two_regime_df(n_per_regime=200)
+    normalizer = fit_regime_normalizer(
+        train_df, sensor_cols=["sensor_x"], op_setting_cols=["op_setting_1"], n_regimes=2
+    )
+
+    # a "test" set with only regime A present - must still normalize using train-fit regime A stats,
+    # not re-derive statistics from this smaller/different sample
+    test_df = _make_two_regime_df(n_per_regime=5)
+    test_df = test_df[test_df["op_setting_1"] == 0.0].reset_index(drop=True)
+    normalized_test = normalizer.transform(test_df)
+
+    assert abs(normalized_test["sensor_x"].mean()) < 1.0  # centered near 0, not wildly off

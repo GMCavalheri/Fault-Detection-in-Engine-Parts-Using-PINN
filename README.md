@@ -21,7 +21,8 @@ This is **project 1 of a 4-project roadmap**:
 | 4 — Optimization comparison | Optuna/PSO-tuned CNN, **0.999** — first model to beat RF | [docs/phase4_results.md](docs/phase4_results.md) |
 | 5 — Physics-informed extension | Bearing defect-frequency loss, modest gain on a harder split | [docs/phase5_results.md](docs/phase5_results.md) |
 | 6 — Productization | API + dashboard + Docker, serving the Phase 4 CNN | [docs/phase6_results.md](docs/phase6_results.md) |
-| + C-MAPSS RUL regression | Gradient Boosting beats an LSTM (17.0 vs 18.9 RMSE) — same "classical is a hard baseline" story, different dataset | [docs/cmapss_results.md](docs/cmapss_results.md) |
+| + C-MAPSS RUL regression (FD001) | Gradient Boosting beats an LSTM (17.0 vs 18.9 RMSE) — same "classical is a hard baseline" story, different dataset | [docs/cmapss_results.md](docs/cmapss_results.md) |
+| + C-MAPSS RUL regression (FD002) | 6-regime dataset needs regime-based normalization — halves the LSTM's NASA score (36,963 → 17,196) | [docs/cmapss_fd002_results.md](docs/cmapss_fd002_results.md) |
 
 Four real bugs were found and fixed along the way (SVM feature scaling in Phase 1, a histogram-binning issue in Phase 2, an unseeded-retrain confound in Phase 4, a stale-channel data quirk in Phase 5) — each is documented in its phase's write-up, not just fixed silently.
 
@@ -59,7 +60,7 @@ The classifier served in production is Phase 4's tuned CNN (validated on a held-
 ## Datasets
 
 - **CWRU Bearing Dataset** — vibration signals for bearing fault diagnosis (multiple fault types/sizes/loads). Modeled in Phases 1–5.
-- **NASA C-MAPSS** — turbofan engine degradation simulation, for Remaining Useful Life (RUL) prediction. Modeled in [docs/cmapss_results.md](docs/cmapss_results.md) (FD001 subset; FD002–4 downloaded but not yet modeled).
+- **NASA C-MAPSS** — turbofan engine degradation simulation, for Remaining Useful Life (RUL) prediction. FD001 modeled in [docs/cmapss_results.md](docs/cmapss_results.md), FD002 in [docs/cmapss_fd002_results.md](docs/cmapss_fd002_results.md); FD004 downloaded but not yet modeled.
 
 Dataset details (sampling rates, labels, split strategy, known file quirks) are documented in [docs/datasets.md](docs/datasets.md).
 

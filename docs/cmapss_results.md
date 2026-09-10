@@ -34,6 +34,6 @@ This is the same story as Phases 1–3 of the CWRU work, playing out again in a 
 
 ## Scope notes
 
-- FD001 only. FD002–FD004 (six operating conditions, harder generalization) are downloaded and ready (`data/raw/cmapss/`) but not modeled — a natural extension matching how the CWRU work started at load-0 before expanding to all conditions.
+- FD001 only. FD002 (six operating conditions) is now modeled too — see [docs/cmapss_fd002_results.md](cmapss_fd002_results.md), which needed its own regime-based normalization step that FD001 didn't. FD004 (six conditions *and* two fault modes) is downloaded but still unexplored.
 - No physics-informed component here, unlike Phase 5's CWRU work. There is a real physics angle available (RUL should be monotonically non-increasing as cycles progress within a trajectory — a natural soft constraint) but it wasn't part of this task's scope; noting it rather than building it unasked.
 - Not integrated into the Phase 6 API/dashboard. Would need its own endpoint (`/predict_rul`, taking a sequence of cycles rather than a single vibration window) — a reasonable follow-on if this becomes a second served model.

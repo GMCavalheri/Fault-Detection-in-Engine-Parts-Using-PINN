@@ -17,13 +17,25 @@ results are comparable to published work on this exact benchmark:
 - **Sensor selection by training-set variance**: FD001's single operating
   condition leaves several sensors and all three operational settings
   constant (or near it) - selected dynamically from train data, not
-  hardcoded, so this still works if FD002-4 (six conditions) are added later.
+  hardcoded, so this still works for FD002-4.
+- **Regime-based normalization (FD002/FD004 only)**: with six operating
+  conditions instead of one, a sensor's raw value is driven by *which
+  condition the engine is in* far more than by degradation - e.g. in FD002,
+  sensor_2's mean shifts by ~106 units across regimes vs. a ~0.4 within-
+  regime std. `RegimeNormalizer` clusters the operating settings into
+  regimes (k-means, fit on train only) and z-scores each sensor within its
+  own regime, removing the condition-driven offset so what's left is (closer
+  to) pure degradation signal. Not needed for FD001 (one already-uniform
+  regime), see docs/cmapss_fd002_results.md for the ablation showing why it
+  matters for FD002.
 """
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from sklearn.cluster import KMeans
 
 COLUMNS = (
     ["unit_id", "cycle"]
@@ -64,6 +76,52 @@ def select_informative_columns(
     """
     stds = train_df[candidate_cols].std()
     return [c for c in candidate_cols if stds[c] > std_threshold]
+
+
+@dataclass
+class RegimeNormalizer:
+    kmeans: KMeans
+    regime_means: pd.DataFrame  # index: regime id, columns: sensor_cols
+    regime_stds: pd.DataFrame
+    sensor_cols: list[str]
+    op_setting_cols: list[str]
+
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Z-scores each row's sensor values using its own regime's train-fit
+        mean/std - regime is assigned by nearest centroid, so this works
+        identically on train and test data without leaking test statistics.
+        """
+        df = df.copy()
+        regimes = self.kmeans.predict(df[self.op_setting_cols])
+        means = self.regime_means.loc[regimes].to_numpy()
+        stds = self.regime_stds.loc[regimes].to_numpy()
+        df[self.sensor_cols] = (df[self.sensor_cols].to_numpy() - means) / stds
+        return df
+
+
+def fit_regime_normalizer(
+    train_df: pd.DataFrame,
+    sensor_cols: list[str] = SENSOR_COLS,
+    op_setting_cols: list[str] = OP_SETTING_COLS,
+    n_regimes: int = 6,
+    random_state: int = 42,
+) -> RegimeNormalizer:
+    kmeans = KMeans(n_clusters=n_regimes, random_state=random_state, n_init=10)
+    regimes = kmeans.fit_predict(train_df[op_setting_cols])
+
+    labeled = train_df[sensor_cols].copy()
+    labeled["_regime"] = regimes
+    stats = labeled.groupby("_regime")[sensor_cols].agg(["mean", "std"])
+    regime_means = stats.xs("mean", axis=1, level=1)
+    regime_stds = stats.xs("std", axis=1, level=1).replace(0, 1.0)  # guard div-by-zero for any constant sensor
+
+    return RegimeNormalizer(
+        kmeans=kmeans,
+        regime_means=regime_means,
+        regime_stds=regime_stds,
+        sensor_cols=sensor_cols,
+        op_setting_cols=op_setting_cols,
+    )
 
 
 def _windows_for_unit(values: np.ndarray, window_size: int) -> np.ndarray:
